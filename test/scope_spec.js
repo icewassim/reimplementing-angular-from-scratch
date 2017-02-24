@@ -30,4 +30,15 @@ describe("digest", function(){
         expect(listenerFn).toHaveBeenCalled();
     });
 
+    it("should have been called with scope as parameter", function(){
+        // page 9
+        var watchFn = jasmine.createSpy();
+        var  listenerFn =  function() { return "ww"};
+
+        scope.$watch(watchFn, listenerFn);
+
+        scope.$digest();
+
+        expect(watchFn).toHaveBeenCalledWith(scope);
+    });
 });
