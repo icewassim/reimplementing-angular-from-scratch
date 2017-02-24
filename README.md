@@ -1,3 +1,3 @@
 # reimplementing-angular-from-scratch
 
-Reimplementing my own AngularJs Framework from Scratch
+Implementing my own AngularJs Framework from Scratch
