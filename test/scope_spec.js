@@ -129,6 +129,119 @@ describe("digest", function(){
         expect((function() { scope.$digest(); })).toThrow();
     });
 
-    
+    it("compare based on value not by refernce if enabled", function(){
+        scope.someProperty = [1,2,3];
+        scope.listenercounter = 0;
 
+        scope.$watch(function(){
+            return scope.someProperty;
+        }, function(){
+            scope.listenercounter++;
+        }, true);
+
+        scope.$digest();
+        expect(scope.listenercounter).toBe(1);
+        scope.someProperty.push(4);
+        scope.$digest();
+        expect(scope.listenercounter).toBe(2);
+    });
+
+    it("should handle watching NaN =", function(){
+        scope.nanProperty = 0/0;
+        scope.listenercounter = 0;
+
+        scope.$watch(function(){
+            return scope.nanProperty;
+        }, function(){
+            scope.listenercounter++;
+        }, false);
+        scope.$digest();
+        expect(scope.listenercounter).toBe(1);
+
+        scope.$digest();
+        expect(scope.listenercounter).toBe(1);
+    });
+
+    it("$eval should avaluete function & it's arguments", function(){
+        scope.someProperty = 40;
+        var result, resultWithArgs;
+
+        result = scope.$eval(function(scope){
+            return scope.someProperty;
+        });
+
+        resultWithArgs = scope.$eval(function(scope, local){
+            return scope.someProperty + local;
+        },2);
+
+
+        expect(result).toBe(40);
+        expect(resultWithArgs).toBe(42);
+    });
+
+    it("$apply execute the eval function and starts a digest", function(){
+        scope.aValue = "hello value";
+        scope.digestCounter = 0;
+
+        scope.$watch(function(){
+            return scope.aValue;
+        }, function(newValue, oldValue, scope){
+            scope.digestCounter ++;
+        });
+        scope.$digest();
+        expect(scope.digestCounter).toBe(1);
+
+        var result  = scope.$apply(function(scope, local){
+            scope.aValue = "howla";
+            return scope.aValue;
+        });
+
+        expect(scope.digestCounter).toBe(2);
+        expect(result).toBe("howla");
+    });
+
+
+    it("should evaluate async in the current digest cycle", function(){
+        scope.someValue = [1, 2, 3];
+        scope.evaluatedAsync = false;
+        scope.evaluatedAsyncImmediatly = false;
+
+        scope.$watch(function(){
+            return scope.someValue;
+        },function(newValue, oldValue, scope){
+            scope.$evalAsync(function(scope){
+                scope.evaluatedAsync = true;
+            });
+            scope.evaluatedAsyncImmediatly = scope.evaluatedAsync;
+        });
+        scope.$digest();
+        expect(scope.evaluatedAsync).toBe(true);
+        expect(scope.evaluatedAsyncImmediatly).toBe(false);
+    });
+
+
+    it("has a $$phase field whose value is the current digest phase", function() {
+        scope.aValue = [1, 2, 3];
+        scope.phaseInWatchFunction = undefined;
+        scope.phaseInListenerFunction = undefined;
+        scope.phaseInApplyFunction = undefined;
+
+        scope.$watch(
+            function(scope) {
+                scope.phaseInWatchFunction = scope.$$phase;
+                return scope.aValue;
+            },
+            function(newValue, oldValue, scope) {
+                scope.phaseInListenerFunction = scope.$$phase;
+            }
+        );
+
+        scope.$apply(function(scope) {
+            scope.phaseInApplyFunction = scope.$$phase;
+        });
+
+        expect(scope.phaseInWatchFunction).toBe('$digest');
+        expect(scope.phaseInListenerFunction).toBe('$digest');
+        expect(scope.phaseInApplyFunction).toBe('$apply');
+    });
 });
